@@ -234,55 +234,42 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   })();
 
-  /* ---------- Contact form ---------- */
+  /* ---------- Contact photo carousel ---------- */
   (function () {
-    var form = document.getElementById('contactForm');
-    if (!form) return;
-    var success = document.getElementById('formSuccess');
-    var error = document.getElementById('formError');
-    var submitBtn = document.getElementById('contactSubmit');
+    var track = document.querySelector('#contactCarousel .carousel-track');
+    var slides = track ? track.querySelectorAll('.carousel-slide') : [];
+    var dotsWrap = document.getElementById('carouselDots');
+    if (!slides.length || !dotsWrap) return;
+    var current = 0;
+    var timer = null;
 
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      if (success) success.classList.remove('is-visible');
-      if (error) error.classList.remove('is-visible');
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Sending…';
-      }
-
-      fetch(form.action, {
-        method: 'POST',
-        body: new FormData(form),
-        headers: { 'Accept': 'application/json' }
-      })
-        .then(function (res) { return res.json().catch(function () { return { success: res.ok }; }); })
-        .then(function (data) {
-          if (data && data.success) {
-            if (success) {
-              success.textContent = 'Thank you — your message has been sent. We will get back to you shortly.';
-              success.classList.add('is-visible');
-              success.focus();
-            }
-            form.reset();
-          } else {
-            throw new Error((data && data.error) || 'send_failed');
-          }
-        })
-        .catch(function () {
-          if (error) {
-            error.textContent = 'Sorry — your message could not be sent. Please try again, or email info@wilwininitiative.org directly.';
-            error.classList.add('is-visible');
-            error.focus();
-          }
-        })
-        .finally(function () {
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Send Message';
-          }
-        });
+    slides.forEach(function (_, i) {
+      var dot = document.createElement('button');
+      dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+      dot.setAttribute('aria-label', 'Go to photo ' + (i + 1));
+      dot.addEventListener('click', function () { goTo(i); resetTimer(); });
+      dotsWrap.appendChild(dot);
     });
+    var dots = dotsWrap.querySelectorAll('.carousel-dot');
+
+    function goTo(i) {
+      slides[current].classList.remove('active');
+      dots[current].classList.remove('active');
+      current = (i + slides.length) % slides.length;
+      slides[current].classList.add('active');
+      dots[current].classList.add('active');
+    }
+    function next() { goTo(current + 1); }
+    function resetTimer() {
+      if (timer) clearInterval(timer);
+      timer = setInterval(next, 4000);
+    }
+
+    var wrap = document.getElementById('contactCarousel');
+    wrap.addEventListener('mouseenter', function () { if (timer) clearInterval(timer); });
+    wrap.addEventListener('mouseleave', resetTimer);
+
+    resetTimer();
   })();
 
 });
