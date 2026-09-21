@@ -239,14 +239,49 @@ document.addEventListener('DOMContentLoaded', function () {
     var form = document.getElementById('contactForm');
     if (!form) return;
     var success = document.getElementById('formSuccess');
+    var error = document.getElementById('formError');
+    var submitBtn = document.getElementById('contactSubmit');
+
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      if (success) {
-        success.classList.add('is-visible');
-        success.setAttribute('role', 'status');
-        success.focus();
+      if (success) success.classList.remove('is-visible');
+      if (error) error.classList.remove('is-visible');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending…';
       }
-      form.reset();
+
+      fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' }
+      })
+        .then(function (res) { return res.json().catch(function () { return { success: res.ok }; }); })
+        .then(function (data) {
+          if (data && data.success) {
+            if (success) {
+              success.textContent = 'Thank you — your message has been sent. We will get back to you shortly.';
+              success.classList.add('is-visible');
+              success.focus();
+            }
+            form.reset();
+          } else {
+            throw new Error((data && data.error) || 'send_failed');
+          }
+        })
+        .catch(function () {
+          if (error) {
+            error.textContent = 'Sorry — your message could not be sent. Please try again, or email info@wilwininitiative.org directly.';
+            error.classList.add('is-visible');
+            error.focus();
+          }
+        })
+        .finally(function () {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send Message';
+          }
+        });
     });
   })();
 
